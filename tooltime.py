@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from concurrent.futures import as_completed, ThreadPoolExecutor
+from concurrent import futures
 from functools import wraps
 from pygit2 import clone_repository
 from utils import richard as r
@@ -34,8 +34,8 @@ def ctrl_c(txt='[ENTER] to continue / [CTRL-C] to quit...'):
 
 
 # CONSTANTS
-GIT_URLS = [k for k in cp.config['github_packages']]
-URLS = [k for k in cp.config['url_packages']]
+GIT_URLS = [k for k in cp.config['github_tools']]
+URLS = [k for k in cp.config['url_tools']]
 PIP_PACKAGES = [key for key in cp.config['pip_packages']]
 APT_PACKAGES = [key for key in cp.config['apt_packages']]
 DEST_DIR = '/opt/contoso_corp/tools'
@@ -58,7 +58,7 @@ def timeit(method):
 		result = method(*args, **kargs)
 		endtime = time.time()
 		print(f'\n')
-		r.console.print(f'{method.__name__} completed in: {(endtime-starttime)*1000} ms')
+		r.console.print(f'Completed in: {(endtime-starttime)*1000} ms')
 
 		return result
 	return wrapper
@@ -73,13 +73,14 @@ def get_repo(url, dest_dir):
 	'''
 
 	# Prepend "git://" protocol to url
-	github_url = f'git://{url}'
+	# github_url = f'git://{url}'
+	
 	# Parse url for filename.
-	filename = f'{github_url.split("/")[-1]}'
+	filename = f'{url.split("/")[-1]}'
 	# Define filepath
 	repo_path = f'{dest_dir}/{filename}'
 	# Clone remote repo to local filesystem.
-	repo = clone_repository(github_url, repo_path)
+	repo = clone_repository(url, repo_path)
 	
 	return repo_path
 
@@ -99,26 +100,26 @@ def get_url(url, dest_dir):
 
 	# Check if file exists before downloading.
 	if os.path.isfile(filepath):
-		raise FileExistsError(f"FileExistsError, '{filepath}' exists and is not an empty directory ")
+		raise FileExistsError(f"'{filepath}' exists and is not an empty directory ")
 
 	# Request URL.
-	r = requests.get(f'https://{url}', stream=True)
+	req = requests.get(f'{url}', stream=True)
 
 	# Raise if not 200 OK / 302 REDIRECT.
-	if not r.status_code == 200 or\
-	 r.status_code == 302:
-		raise StatusCodeError(f"StatusCodeError, 'https://{url}' Responded with '{r.status_code}' ")
+	if not req.status_code == 200 or\
+	 req.status_code == 302:
+		raise StatusCodeError(f"'{url}' Responded with '{req.status_code}' ")
 
 	# Get content-length
-	r_contentlen = r.headers['Content-length']
+	r_contentlen = req.headers['Content-length']
 	# Print requests and response code.
-	r.logging.info(f'Request: https://{url}')
+	r.logging.info(f'Request: {url}')
 	r.logging.info(f'Content-length: {r_contentlen}')
-	r.logging.info(f'Response: {r.status_code}')
+	r.logging.info(f'Response: {req.status_code}')
 	
 	# Save file as binary via chucks.
 	with open(filepath, 'wb') as f1:
-		for chunk in r.iter_content(chunk_size=1024):
+		for chunk in req.iter_content(chunk_size=1024):
 			if chunk:
 				f1.write(chunk)
 	return f1.name
@@ -156,7 +157,7 @@ def get_pip(packages):
 	- packages:lst
 	'''
 
-	with r.console.status(f'[txt.spinner]Processing...') as status:
+	with r.console.status(status=f'[txt.spinner]Processing...') as status:
 		for package in packages:
 			if is_installed(package):
 				r.logging.warning(f'Package already installed: {package}')
@@ -200,24 +201,25 @@ def get_apt(packages):
 			r.logging.warning(f'{e}')
 			pass #raise e
 
+
 @timeit
 def make_threaded(func, urls, dest_dir):
 	''' Threaded func for get_repo() and get_url()'''
 
-	with r.console.status(f'[txt.spinner]Downloading...') as status:
+	with r.console.status(status=f'[txt.spinner]Downloading') as status:
 		# Executor-pool used with content manager to ensure threads are cleaned up promptly.
-		with ThreadPoolExecutor() as executor:
+		with futures.ThreadPoolExecutor() as executor:
 			# Load operations and mark each future with its URL.
 			future_to_url = {executor.submit(func, url, dest_dir): url for url in urls}
 			# Obtain results as they're completed.
-			for future in as_completed(future_to_url):
+			for future in futures.as_completed(future_to_url):
 				url = future_to_url[future]
 				try:
 					data = future.result()
 				except Exception as e:
 					r.logging.warning(f'{e}')
 				else:
-					r.console.log(f'Downloaded: {data}')
+					r.console.log(f'{data}')
 
 
 @timeit
