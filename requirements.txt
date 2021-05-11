@@ -1,1 +1,3 @@
+configparser
+pygit2
 rich
