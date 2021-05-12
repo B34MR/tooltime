@@ -9,45 +9,15 @@ import apt
 import os
 import requests
 import subprocess
-import sys
 import time
 
 
-# Utils
-####################################
-def banner(banner_title):
-	''' Banner used in scripts.'''
-
-	print('\n')
-	r.console.print(r.Panel('', title=f'[h1]{banner_title}', 
-		height=1, width=95, box=r.box.DOUBLE_EDGE))
-
-
-def ctrl_c(txt='[ENTER] to continue / [CTRL-C] to quit...'):
-	''' Press ENTER / CTRL-C '''
-
-	try:
-		input(f'\n{txt}')
-	except KeyboardInterrupt:
-		print(f'\nQuit: detected [CTRL-C] ')
-		sys.exit(0)
-
-
-# CONSTANTS
+# Confgfile values.
 GIT_URLS = [k for k in cp.config['github_tools']]
 URLS = [k for k in cp.config['url_tools']]
-PIP_PACKAGES = [key for key in cp.config['pip_packages']]
-APT_PACKAGES = [key for key in cp.config['apt_packages']]
-DEST_DIR = '/opt/contoso_corp/tools'
-
-
-class StatusCodeError(Exception):
-	''' Error for requests module,  status return code.'''
-	pass
-
-class PackageExistsError(Exception):
-	''' Error for apt module, package exists.'''
-	pass
+PIP_PACKAGES = [k for k in cp.config['pip_packages']]
+APT_PACKAGES = [k for k in cp.config['apt_packages']]
+DEST_DIR = ''.join([k for k in cp.config['tools_dir']])
 
 
 def timeit(method):
@@ -64,16 +34,101 @@ def timeit(method):
 	return wrapper
 
 
-def get_repo(url, dest_dir):
+class StatusCodeError(Exception):
+	''' Error for requests module,  status return code.'''
+	pass
+
+
+class PackageExistsError(Exception):
+	''' Error for apt module, package exists.'''
+	pass
+
+
+class Downloader():
+	''' ''' 
+
+	def __init__(self, dest_dir):
+		self.dest_dir = dest_dir
+
+	
+	def filepath(self, url):
+		''' 
+		Return filepath. args(s) url:str 
+		'''
+
+		# Parse url for filename.
+		filename = url.split("/")[-1]
+		# Define filepath
+		return os.path.join(self.dest_dir, filename)
+
+	
+	def get_git(self, url):
+		''' 
+		Requests a Github repo and download contents to the local filesystem.
+		arg(s): url:str, dest_dir:str 
+		'''
+
+		# Define local filepath.
+		filepath = self.filepath(url)
+		# Clone remote repo to local filesystem.
+		clone_repository(url, filepath)
+
+		return filepath
+
+	
+	def get_url(self, url):
+		''' 
+		Requests a URL and download contents to the local filesystem. 
+		arg(s): url:str, dest_dir:str
+		'''
+
+		# Define local filepath.
+		filepath = self.filepath(url)
+		# Check if filepath exists before downloading.
+		if os.path.isfile(filepath):
+			raise FileExistsError(f"'{filepath}' exists and is not an empty directory ")
+
+		# Request URL.
+		req = requests.get(f'{url}', stream=True)
+
+		# Raise if not 200 OK / 302 REDIRECT.
+		if not req.status_code == 200 or\
+		 req.status_code == 302:
+			raise StatusCodeError(f"'{url}' Responded with '{req.status_code}' ")
+
+		# Get content-length
+		r_contentlen = req.headers['Content-length']
+		# Print requests and response code.
+		r.logging.info(f'Request: {url}')
+		r.logging.info(f'Content-length: {r_contentlen}')
+		r.logging.info(f'Response: {req.status_code}')
+		
+		# Save file as binary via chucks.
+		with open(filepath, 'wb') as f1:
+			for chunk in req.iter_content(chunk_size=1024):
+				if chunk:
+					f1.write(chunk)
+		return f1.name
+
+
+downloader = Downloader(DEST_DIR)
+
+result1 = downloader.get_git(url='https://github.com/cddmp/enum4linux-ng')
+print(result1)
+
+result2 = downloader.get_url(url='https://github.com/ropnop/kerbrute/releases/download/v1.0.3/kerbrute_linux_amd64')
+print(result2)
+
+exit()
+
+
+def get_git(url, dest_dir):
 	'''
 	Requests a Github repo and download contents to the local filesystem.
 	arg(s):
-	- url:str  (Doesn't support URL prefixes i.e https://)
+	- url:str
 	- dest_dir:str
 	'''
-
-	# Prepend "git://" protocol to url
-	# github_url = f'git://{url}'
 	
 	# Parse url for filename.
 	filename = f'{url.split("/")[-1]}'
@@ -89,7 +144,7 @@ def get_url(url, dest_dir):
 	''' 
 	Requests a URL and download contents to the local filesystem.
 	arg(s):
-	- url:str (Doesn't support URL prefixes i.e https://) 
+	- url:str
 	- dest_dir:str
 	'''
 
@@ -204,7 +259,7 @@ def get_apt(packages):
 
 @timeit
 def make_threaded(func, urls, dest_dir):
-	''' Threaded func for get_repo() and get_url()'''
+	''' Threaded func for get_git() and get_url()'''
 
 	with r.console.status(status=f'[txt.spinner]Downloading') as status:
 		# Executor-pool used with content manager to ensure threads are cleaned up promptly.
@@ -227,22 +282,22 @@ def main():
 	''' Main func '''
 
 	# Pause, mainly used for testing.
-	ctrl_c()
+	r.ctrl_c()
 	
 	# Github-Downloads.
-	banner('Github Downloads')
-	make_threaded(get_repo, GIT_URLS, DEST_DIR)
+	r.banner('Github Downloads')
+	make_threaded(get_git, GIT_URLS, DEST_DIR)
 
 	# URL-Downloads.
-	banner('URL Downloads')
+	r.banner('URL Downloads')
 	make_threaded(get_url, URLS, DEST_DIR)
 
 	# Pip Download/Install.
-	banner('Pip Downloads/Installs')
+	r.banner('Pip Downloads/Installs')
 	get_pip(PIP_PACKAGES)
 
 	# APT Download/Install.
-	banner('APT Downloads/Installs')
+	r.banner('APT Downloads/Installs')
 	get_apt(APT_PACKAGES)
 
 
