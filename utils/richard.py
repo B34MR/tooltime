@@ -18,10 +18,10 @@ console = Console(theme=mytheme)
 # logger - Rich
 logging.basicConfig(
 	# filename='',
-	level='WARNING',
+	level='INFO',
 	format='%(message)s',
 	datefmt='[%X]',
-	handlers=[RichHandler(console=console, rich_tracebacks=True)]
+	handlers=[RichHandler(console=console, rich_tracebacks=True, omit_repeated_times=False)]
 	)
 logging = logging.getLogger('rich')
 

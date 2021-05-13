@@ -40,91 +40,88 @@ class PackageExistsError(Exception):
 	pass
 
 
-class installer():
+class Installer():
 	''' Installer for Pip and Apt packages. '''
 
 	def __init__(self):
 		pass
 
 
-	def pip_installed(self):
-		pass
-
-
-	def pip_package(self, package):
+	def is_installed(self, package, cmd='pip show'):
 		''' 
-		Install Pip packages. arg(s):package:str
+		Return bool for Pip package status. 
+		arg(s): packages:str  
 		'''
-		
+
+		cmd = cmd.split(' ')
+		cmd.append(package)
+		warning_msg = f'WARNING: Package(s) not found: {package}'
+
 		try:
-			result = subprocess.run(['pip', 'install', package],
+			result = subprocess.run(cmd,
 				shell=False,
 				check=False,
 				capture_output=True,
 				text=True)
-			r.console.log(result.stderr)
-			r.console.log(result.stdout)
-		except Exception as e:
+		except subprocess.CalledProcessError as e:
 			# Set check=True for the exception to catch.
 			logging.exception(f'{e}')
-			pass #raise e
-
-	def apt_package(self):
-		pass
-
-install = installer()
-# install.pip_package('mitm6')
-package_results = list(map(install.pip_package, PIP_PACKAGES))
-
-exit()
-
-
-
-def is_installed(package):
-	''' 
-	Returns boolean for Pip package status.
-	arg(s): packages:str 
-	'''
-	
-	try:
-		result = subprocess.run(['pip', 'show', package],
-			shell=False,
-			check=False,
-			capture_output=True,
-			text=True)
-	except Exception as e:
-		# Set check=True for the exception to catch.
-		logging.exception(f'{e}')
-		pass
-	else:
-		if f'WARNING: Package(s) not found: {package}' in result.stderr:
-			return False
+			pass
 		else:
-			return True
+			if warning_msg in result.stderr:
+				return False
+			else:
+				logging.debug(result.stdout)
+				return True
 
 
-def get_pip(packages):
-	'''
-	Install Pip packages.
-	arg(s): packages:lst
-	'''
+	def pip_install(self, package, cmd='pip install'):
+		''' 
+		Install Pip packages. arg(s):package:str
+		'''
 
-	for package in packages:
-		if is_installed(package):
-			logging.warning(f'Package already installed: {package}')
+		cmd = cmd.split(' ')
+		cmd.append(package)
+
+		if self.is_installed(package) == True:
+			logging.info(f'Package already installed: {package}')
 		else:
 			try:
-				result = subprocess.run(['pip', 'install', package],
+				result = subprocess.run(cmd,
 					shell=False,
 					check=False,
 					capture_output=True,
 					text=True)
-				r.console.log(result.stderr)
-				r.console.log(result.stdout)
-			except Exception as e:
+			except subprocess.CalledProcessError as e:
 				# Set check=True for the exception to catch.
 				logging.exception(f'{e}')
-				pass #raise e
+				pass
+			else:
+				logging.info(result.stdout)
+				logging.warning(result.stderr)
+
+	
+	def apt_install(self, package):
+		''' 
+		Install packages for apt. arg(s): packages:lst 
+		'''
+
+		cache = apt.cache.Cache()
+		cache.update()
+		cache.open()
+
+		try:
+			apt_package = cache[package]
+			if apt_package.is_installed:
+				raise PackageExistsError(f'Package already installed: {apt_package}')
+			else:
+				apt_package.mark_install()
+				cache.commit()
+				r.console.log(f'Installed: {cache.get_changes()}')
+		except Exception as e:
+			logging.info(f'{e}')
+			pass #raise e
+
 
 
 def get_apt(packages):
@@ -147,7 +144,7 @@ def get_apt(packages):
 				cache.commit()
 				r.console.log(f'Installed: {cache.get_changes()}')
 		except Exception as e:
-			logging.warning(f'{e}')
+			logging.info(f'{e}')
 			pass #raise e
 
 
@@ -165,7 +162,7 @@ def make_threaded(func, urls):
 			try:
 				data = future.result()
 			except Exception as e:
-				logging.warning(f'{e}')
+				logging.info(f'{e}')
 			else:
 				r.console.log(f'{data}')
 
@@ -191,17 +188,18 @@ def main():
 		make_threaded(dl.get_binary, BINARY_URLS)
 
 	# Installer init.
-	# install = Installer()
+	installer = Installer()
 
 	# Pip Download/Install.
 	r.banner('Pip Downloads/Installs')
 	with r.console.status(status=f'[txt.spinner]Processing...') as status:
-		get_pip(PIP_PACKAGES)
+		results = list(map(installer.pip_install, PIP_PACKAGES))
 
 	# APT Download/Install.
 	r.banner('APT Downloads/Installs')
 	with r.console.status(status=f'[txt.spinner]Processing...') as status:
-		get_apt(APT_PACKAGES)
+		results = list(map(installer.apt_install, APT_PACKAGES))
+	
 
 
 if __name__ == '__main__':

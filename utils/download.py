@@ -10,6 +10,7 @@ class StatusCodeError(Exception):
 	''' Error for requests module,  status return code.'''
 	pass
 
+
 class Downloader():
 	''' Downloader for Github repos and binaries ''' 
 
@@ -17,19 +18,6 @@ class Downloader():
 		self.dest_dir = dest_dir
 
 	
-	def save_file(self, filepath, response):
-		'''  
-		Save binary file from 'Requests' via chucks.
-		arg(s): filepath:str, response: class 'requests.models.Response
-		'''
-		
-		with open(filepath, 'wb') as f1:
-			for chunk in response.iter_content(chunk_size=1024):
-				if chunk:
-					f1.write(chunk)
-		return f1.name
-
-
 	def filepath(self, url):
 		''' 
 		Return filepath. args(s) url:str 
@@ -59,6 +47,19 @@ class Downloader():
 		return filepath
 
 	
+	def save_file(self, filepath, response):
+		'''  
+		Save binary file from 'Requests' via chucks.
+		arg(s): filepath:str, response: class 'requests.models.Response
+		'''
+		
+		with open(filepath, 'wb') as f1:
+			for chunk in response.iter_content(chunk_size=1024):
+				if chunk:
+					f1.write(chunk)
+		return f1.name
+
+	
 	def get_binary(self, url):
 		''' 
 		Download a binary file to the local filesystem. 
@@ -74,7 +75,8 @@ class Downloader():
 		# Raise if not 200 OK / 302 REDIRECT.
 		if not res.status_code == 200 or\
 		 res.status_code == 302:
-			raise StatusCodeError(f"'{url}' Responded with '{res.status_code}' ")
+		 	logging.warning(f"'{url}' Responded with '{res.status_code}' ")
+		 	raise StatusCodeError
 		# Debugging.
 		contentlen = res.headers['Content-length']
 		logging.debug(f'Request: {url}')
