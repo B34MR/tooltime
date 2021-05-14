@@ -51,7 +51,7 @@ class Installer():
 		cmd.append(package)
 
 		if self.is_installed(package) == True:
-			logging.info(f'Package already installed: {package}')
+			logging.warning(f'Package already installed: {package}')
 		else:
 			try:
 				result = subprocess.run(cmd,
@@ -84,7 +84,7 @@ class Installer():
 			else:
 				apt_package.mark_install()
 				cache.commit()
-				r.console.log(f'Installed: {cache.get_changes()}')
+				logging.info(f'Installed: {cache.get_changes()}')
 		except Exception as e:
-			logging.info(f'{e}')
+			logging.warning(f'{e}')
 			pass #raise e

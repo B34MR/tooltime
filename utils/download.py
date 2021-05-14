@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from pygit2 import clone_repository
+from pygit2 import clone_repository, AlreadyExistsError
 import os
 import logging
 import requests
@@ -28,7 +28,7 @@ class Downloader():
 		# Define filepath
 		filepath = os.path.join(self.dest_dir, filename)
 		if os.path.isfile(filepath):
-			raise FileExistsError(f"'{filepath}' exists and is not an empty directory! ")
+			raise FileExistsError(f"File already exists: {filepath}")
 
 		return filepath
 
@@ -42,8 +42,12 @@ class Downloader():
 		# Define local filepath.
 		filepath = self.filepath(url)
 		# Clone remote repo to local filesystem.
-		clone_repository(url, filepath)
-
+		try:
+			clone_repository(url, filepath)
+		except ValueError as e:
+			# https://stackoverflow.com/questions/9157210/how-do-i-raise-the-same-exception-with-a-custom-message-in-python/29442282#29442282
+			raise Exception(f'File already exists: {filepath}').with_traceback(e.__traceback__)
+		
 		return filepath
 
 	
@@ -75,7 +79,7 @@ class Downloader():
 		# Raise if not 200 OK / 302 REDIRECT.
 		if not res.status_code == 200 or\
 		 res.status_code == 302:
-		 	logging.warning(f"'{url}' Responded with '{res.status_code}' ")
+		 	logging.error(f"Responded with '{res.status_code}': '{url}'")
 		 	raise StatusCodeError
 		# Debugging.
 		contentlen = res.headers['Content-length']
