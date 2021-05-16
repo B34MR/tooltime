@@ -57,16 +57,14 @@ def append_str(mystr, filepath):
 	return mystr
 
 
-def append_lst(mylst, filename):
+def append_lst(mylst, filepath):
 	''' 
-	Append a list of strs to a file located in a user's home directory.
+	Append a list of strs to a file.
 	arg(s) mylst:list, filename:str
 	'''
 
 	# Custom comment.
-	comment = f'\n### Modified by: {os.path.realpath(__file__)} ###'
-	# Filepath for bashrc and bash_aliases.
-	filepath = os.path.join(os.path.expanduser('~'), f'{filename}')
+	comment = f'### Modified by: {os.path.realpath(__file__)} ###'
 	# Append comment to file.
 	append_str(comment, filepath)
 	# Append item:str to file.
@@ -97,13 +95,19 @@ def main():
 		# Check if aliases are in configfile.
 		r.banner('Aliases')
 		if ALIASES:
-			results = append_lst(ALIASES, '.bash_aliases')
-			[logging.info(result) for result in results]
+			filepath = os.path.join(os.path.expanduser('~'), '.bash_aliases')
+			# Append list to file.
+			results = append_lst(ALIASES, filepath)
+			# Print results.
+			[logging.info(f'Append {filepath}: {result}') for result in results]
 		# Check if exposts are in configfile.
 		r.banner('Exports')
 		if EXPORTS:
-			results = append_lst(EXPORTS, '.bashrc')
-			[print(result) for result in results]
+			filepath = os.path.join(os.path.expanduser('~'), f'.bashrc')
+			# Append list to file.
+			results = append_lst(EXPORTS, filepath)
+			# Print results.
+			[logging.info(f'Appended {filepath}: {result}') for result in results]
 
 	# Set delimiter '=' for all other configfiles.
 	else:
