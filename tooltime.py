@@ -86,7 +86,7 @@ def main():
 	# Set delimiter ':' for 'aliases.ini' configfile.
 	filename = os.path.basename(filepath)
 	if filename == 'aliases.ini':
-		config = ConfigParser(allow_no_value=True, delimiters=':')
+		config = ConfigParser(allow_no_value=True, delimiters='*')
 		config.optionxform = str
 		config.read(filepath)
 		# Config file values.
