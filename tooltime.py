@@ -100,7 +100,7 @@ def main():
 			results = append_lst(ALIASES, filepath)
 			# Print results.
 			[logging.info(f'Append {filepath}: {result}') for result in results]
-		# Check if exposts are in configfile.
+		# Check if exports are in configfile.
 		r.banner('Exports')
 		if EXPORTS:
 			filepath = os.path.join(os.path.expanduser('~'), f'.bashrc')
