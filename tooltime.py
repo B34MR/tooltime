@@ -48,9 +48,8 @@ def make_threaded(func, urls):
 def append_str(mystr, filepath):
 	''' 
 	Append string to file.
-	arg(s) filepath:str, mystr:str
+	arg(s) filepath:str, mystr:str'''
 
-	'''
 	with open(filepath, 'a+') as f1:
 		f1.write(f'\n{mystr}')
 	
@@ -60,8 +59,7 @@ def append_str(mystr, filepath):
 def append_lst(mylst, filepath):
 	''' 
 	Append a list of strs to a file.
-	arg(s) mylst:list, filename:str
-	'''
+	arg(s) mylst:list, filename:str'''
 
 	# Custom comment.
 	comment = f'### Modified by: {os.path.realpath(__file__)} ###'
