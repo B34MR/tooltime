@@ -12,7 +12,7 @@ A Python3 script that quickly downloads and or installs Pentesting tools from a 
 - WebApp: ./tooltime/configs/webapp.ini
 - Wireless: ./tooltime/configs/wireless.ini
 
-* A custom Tool configuration files can also be used and may contain any filename</i>
+* A custom Tool configuration files can also be used and may contain any filename
 ```
 **Alias Configuration files can be used customize your aliases and Bash prompt:**
 ```
