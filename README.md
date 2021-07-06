@@ -5,36 +5,33 @@ A Python3 script that quickly downloads and or installs Pentesting tools from a 
 
 <br>
 
-### Tool Configuration files are categorized by assessment type and are located at the following:
-* External Network: ./tooltime/configs/external.ini
-* Internal Network: ./tooltime/configs/internal.ini
-* WebApp: ./tooltime/configs/webapp.ini
-* Wireless: ./tooltime/configs/wireless.ini
-<br>
+**Tool Configuration files are categorized by assessment type and are located at the following:**
+```
+- External Network: ./tooltime/configs/external.ini
+- Internal Network: ./tooltime/configs/internal.ini
+- WebApp: ./tooltime/configs/webapp.ini
+- Wireless: ./tooltime/configs/wireless.ini
 
-<i>* Custom Tool Configuration files can also be used and may contain any filename.</i>
+* A custom Tool configuration files can also be used and may contain any filename</i>
+```
+**Alias Configuration files can be used customize your aliases and Bash prompt:**
+```
+- Alaises: ./tooltime/configs/alaises.ini
 
-<br>
+* A custom Alias configuration files can also be used, however it must use the 'aliases.ini' filename.
+```
 
-### Alias Configuration files can be used customize your aliases and Bash prompt:
-* Alaises: ./tooltime/configs/alaises.ini
-<br>
+**Tool Configuration file legend:** <br>
+```
+- tools_dir - The destination directory for Github and Binary tools.
+- github_urls - Github repositories to download.
+- binary_urls - Files from direct URLs to download.
+- pip_packages - Python3-Pip packages to install.
+- apt_packages - APT packages to install.
+- '#' to comment out any tools you wish to omit.
+```
 
-<i>* Custom Alias Configuration files can also be used, however it must use the 'aliases.ini' filename.</i>
-
-<br>
-
-*Tool Configuration file legend:* <br>
-* tools_dir - The destination directory for Github and Binary tools.
-* github_urls - Github repositories to download.
-* binary_urls - Files from direct URLs to download.
-* pip_packages - Python3-Pip packages to install.
-* apt_packages - APT packages to install.
-* '#' to comment out any tools you wish to omit.
-
-<br>
-
-*Sample Configuration File:*
+**Sample Configuration File:**
 ```
 [tools_dir]
 /opt/tools/internal
@@ -55,22 +52,19 @@ mitm6
 #powershell
 tree
 ```
-
-<br>
-
-*Supported Operating System:*
+**Supported Operating System:**
 ```
 Kali-Linux
 ```
 
-*Installation*
+**Installation:**
 ```
 apt install python3-pip
 cd tooltime/
 python3 -m pip install -r requirements.txt
 ```
 
-*Usage:*
+**Usage:**
 ```
 Customize one of the built-in Tool Configuration files or create your own.
 Tooltime uses a positional argument for the config file selection.
@@ -85,6 +79,6 @@ python3 tooltime.py /root/mycustomconfig.ini
 ```
 <br>
 
-*Tooltime Demo:*
+**Tooltime Demo:**
 
 ![Tooltime Demo](demo/demo.gif)
