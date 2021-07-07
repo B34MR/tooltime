@@ -8,6 +8,7 @@ from utils import download
 from utils import install
 from utils import richard as r
 import os
+import shutil
 import logging
 import time
 
@@ -43,6 +44,22 @@ def make_threaded(func, urls):
 				logging.warning(f'{e}')
 			else:
 				logging.info(f'Downloaded: {data}')
+				
+
+def copy_file(src, dst):
+	''' 
+	Copy file from src to dst via the shutil module.
+	Return filepath.
+	arg(s) src:str, dst:str'''
+
+	try:
+		filepath = shutil.copy(src, dst)
+	except IOError as e:
+		raise e
+	except Exception as e:
+		raise e
+	else:
+		return filepath
 
 
 def append_str(mystr, filepath):
@@ -81,9 +98,28 @@ def main():
 	# Args - Configfile path
 	filepath = args.configfile
 
-	# Set delimiter ':' for 'aliases.ini' configfile.
+	# filename provided on cli.
 	filename = os.path.basename(filepath)
-	if filename == 'aliases.ini':
+
+	# Tmux.ini mode.
+	if filename == 'tmux.ini':
+		r.banner('Tmux.conf')
+		# Config filepath.
+		tmux_ini = './configs/tmux.ini'
+		# tmux.conf and tmux.conf.bak filepaths.
+		tmux_conf = os.path.join(os.path.expanduser('~'), '.tmux.conf')
+		tmux_bak = tmux_conf + '.bak'
+		if os.path.isfile(tmux_conf):
+			# Create 'tmux.conf.bak' backup.
+			r.logging.warning(f'File already exists: {tmux_conf}')
+			filepath = copy_file(tmux_conf, tmux_bak)
+			r.logging.info(f'Created backup: {filepath}')
+		# Copy 'tmux.ini' to 'tmux.conf'.
+		filepath = copy_file(tmux_ini, tmux_conf)
+		r.logging.info(f'Copied: {tmux_ini} to {filepath}')
+
+	# Alias mode - set delimiter ':' for 'aliases.ini' configfile.
+	elif filename == 'aliases.ini':
 		config = ConfigParser(allow_no_value=True, delimiters='*')
 		config.optionxform = str
 		config.read(filepath)
@@ -97,7 +133,7 @@ def main():
 			# Append list to file.
 			results = append_lst(ALIASES, filepath)
 			# Print results.
-			[logging.info(f'Append {filepath}: {result}') for result in results]
+			[logging.info(f'Appended {filepath}: {result}') for result in results]
 		# Check if exports are in configfile.
 		r.banner('Exports')
 		if EXPORTS:
@@ -107,7 +143,7 @@ def main():
 			# Print results.
 			[logging.info(f'Appended {filepath}: {result}') for result in results]
 
-	# Set delimiter '=' for all other configfiles.
+	# Tool mode - set delimiter '=' for all other configfiles.
 	else:
 		config = ConfigParser(allow_no_value=True, delimiters='=')
 		config.optionxform = str
